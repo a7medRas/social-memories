@@ -1,11 +1,129 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
-  <head>
-    <meta charset="UTF-8" />
-    <title>جدار الذكريات</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  </head>
-  <body class="bg-white dark:bg-gray-800 text-gray-900 dark:text-white">
-    <div id="root"></div>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>جدار الذكريات</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script type="module">
+    // Firebase config
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, increment, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+
+    const firebaseConfig = {
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT.appspot.com",
+      messagingSenderId: "SENDER_ID",
+      appId: "APP_ID"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth();
+
+    // --- تطبيق جدار الذكريات ---
+
+    const container = document.getElementById("app");
+
+    const loadUsers = async () => {
+      const snap = await getDocs(collection(db, "users"));
+      const users = snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      container.innerHTML = `
+        <h2 class="text-xl font-bold mb-2">🔍 البحث عن المستخدمين</h2>
+        <input id="searchInput" placeholder="ابحث باسم..." class="border p-2 mb-4 rounded w-full"/>
+        <ul id="usersList" class="space-y-2"></ul>
+      `;
+
+      const searchInput = document.getElementById("searchInput");
+      const usersList = document.getElementById("usersList");
+
+      const renderList = (filter = "") => {
+        const filtered = users.filter(u => u.displayName?.toLowerCase().includes(filter.toLowerCase()));
+        usersList.innerHTML = filtered.length === 0
+          ? "<p>لا يوجد مستخدمين.</p>"
+          : filtered.map(user =>
+              `<li><button onclick="loadProfile('${user.id}')" class="text-blue-600 underline">👤 ${user.displayName}</button></li>`
+            ).join("");
+      };
+
+      renderList();
+      searchInput.addEventListener("input", e => renderList(e.target.value));
+    };
+
+    window.loadProfile = async (uid) => {
+      container.innerHTML = "<p>جاري تحميل الملف الشخصي...</p>";
+      const userSnap = await getDoc(doc(db, "users", uid));
+      const user = userSnap.data();
+      if (!user) return container.innerHTML = "<p>❌ المستخدم غير موجود</p>";
+
+      const memSnap = await getDocs(collection(db, `users/${uid}/memories`));
+      const memories = memSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+      const commentsMap = {};
+      for (const memory of memories) {
+        const commSnap = await getDocs(
+          query(collection(db, `users/${uid}/memories/${memory.id}/comments`), orderBy("timestamp", "desc"))
+        );
+        commentsMap[memory.id] = commSnap.docs.map(doc => doc.data());
+      }
+
+      const memHtml = memories.map(m => `
+        <li class="mb-4 border-b pb-2">
+          <div>${m.title || "ذكرى بدون عنوان"}</div>
+          <button onclick="like('${uid}', '${m.id}')" class="text-blue-600">👍 ${m.likes || 0} إعجاب</button>
+          <button onclick="comment('${uid}', '${m.id}')" class="text-green-600 ml-4">💬 ${m.commentsCount || 0} تعليق</button>
+          <ul class="text-sm mt-2">
+            ${(commentsMap[m.id] || []).map(c =>
+              `<li><strong>${c.displayName}:</strong> ${c.text}</li>`
+            ).join("")}
+          </ul>
+        </li>
+      `).join("");
+
+      container.innerHTML = `
+        <div class="mb-4">
+          <h2 class="text-xl font-bold">👤 ${user.displayName}</h2>
+          <p><strong>البريد:</strong> ${user.email}</p>
+        </div>
+        <div class="mb-4">
+          <button onclick="loadUsers()" class="text-blue-600">🔙 عودة</button>
+        </div>
+        <ul>${memHtml || "<p>لا توجد ذكريات</p>"}</ul>
+      `;
+    };
+
+    window.like = async (uid, mid) => {
+      const ref = doc(db, `users/${uid}/memories/${mid}`);
+      await updateDoc(ref, { likes: increment(1) });
+      loadProfile(uid);
+    };
+
+    window.comment = async (uid, mid) => {
+      const text = prompt("أدخل تعليقك:");
+      if (!text) return;
+      const user = auth.currentUser || { displayName: "مجهول" };
+      const comment = {
+        text,
+        timestamp: new Date(),
+        displayName: user.displayName || "مجهول",
+      };
+      await addDoc(collection(db, `users/${uid}/memories/${mid}/comments`), comment);
+      await updateDoc(doc(db, `users/${uid}/memories/${mid}`), {
+        commentsCount: increment(1)
+      });
+      loadProfile(uid);
+    };
+
+    onAuthStateChanged(auth, () => {
+      loadUsers();
+    });
+  </script>
+</head>
+<body class="bg-white text-gray-900 dark:bg-gray-900 dark:text-white font-sans">
+  <div id="app" class="p-6 max-w-xl mx-auto text-right"></div>
+</body>
 </html>

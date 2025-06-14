@@ -3,32 +3,45 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>تسجيل الدخول بـ Firebase</title>
+  <title>تطبيق ذكريات ودردشة - Firebase</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 400px;
-      margin: 2rem auto;
+      max-width: 600px;
+      margin: 1rem auto;
       padding: 1rem;
-      background: #f0f0f0;
+      background: #f9f9f9;
       direction: rtl;
     }
-    input, button {
+    h2, h3 {
+      text-align: center;
+    }
+    input, textarea, select, button {
       width: 100%;
-      margin: 0.5rem 0;
+      margin: 0.3rem 0 1rem 0;
       padding: 0.5rem;
       font-size: 1rem;
+      box-sizing: border-box;
     }
     button {
       cursor: pointer;
+      background-color: #2d89ef;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #1b5fad;
     }
     .hidden {
       display: none;
     }
     .message {
-      margin-top: 1rem;
-      padding: 0.5rem;
-      border-radius: 4px;
+      margin: 1rem 0;
+      padding: 0.8rem;
+      border-radius: 5px;
+      font-weight: bold;
     }
     .error {
       background-color: #fdd;
@@ -38,32 +51,144 @@
       background-color: #dfd;
       color: #090;
     }
+    .memory {
+      background: white;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+    }
+    .memory .mood {
+      font-weight: bold;
+      color: #555;
+      margin-bottom: 0.4rem;
+    }
+    .memory .likes-comments {
+      display: flex;
+      gap: 1rem;
+      margin-top: 0.5rem;
+    }
+    .likes-comments button {
+      background: none;
+      border: none;
+      color: #2d89ef;
+      cursor: pointer;
+      padding: 0;
+      font-size: 0.9rem;
+      font-weight: bold;
+    }
+    .comments-list {
+      margin-top: 0.5rem;
+      padding-left: 1rem;
+      border-left: 2px solid #2d89ef;
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+      color: #333;
+    }
+    .comments-list div {
+      margin-bottom: 0.3rem;
+    }
+    .chat-container {
+      background: white;
+      border-radius: 6px;
+      padding: 1rem;
+      margin-top: 2rem;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    }
+    .chat-messages {
+      border: 1px solid #ccc;
+      height: 200px;
+      overflow-y: auto;
+      padding: 0.5rem;
+      margin-bottom: 0.8rem;
+      background: #fafafa;
+      font-size: 0.9rem;
+    }
+    .chat-messages div {
+      margin-bottom: 0.4rem;
+    }
+    .chat-input {
+      display: flex;
+      gap: 0.5rem;
+    }
+    .chat-input input {
+      flex-grow: 1;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 1rem;
+      align-items: center;
+    }
+    .top-bar button {
+      width: auto;
+      padding: 0.4rem 0.8rem;
+      font-size: 0.9rem;
+      border-radius: 4px;
+    }
   </style>
 </head>
 <body>
 
-  <h2>تسجيل الدخول أو إنشاء حساب جديد</h2>
+  <h2>تطبيق ذكريات ودردشة</h2>
 
-  <div id="auth-forms">
+  <!-- تسجيل الدخول / إنشاء حساب -->
+  <div id="auth-section">
     <input id="email" type="email" placeholder="البريد الإلكتروني" required />
     <input id="password" type="password" placeholder="كلمة المرور" required />
     <button id="login-btn">تسجيل الدخول</button>
     <button id="signup-btn">إنشاء حساب جديد</button>
+    <div id="auth-message" class="message hidden"></div>
   </div>
 
-  <div id="user-info" class="hidden">
-    <p>مرحباً، <span id="user-email"></span></p>
-    <button id="logout-btn">تسجيل الخروج</button>
+  <!-- معلومات المستخدم -->
+  <div id="user-section" class="hidden">
+    <div class="top-bar">
+      <div>مرحباً، <span id="user-email"></span></div>
+      <button id="logout-btn" style="background:#d9534f;">تسجيل الخروج</button>
+    </div>
+
+    <!-- نشر ذكرى جديدة -->
+    <section>
+      <h3>📔 نشر ذكرى جديدة</h3>
+      <textarea id="memory-text" placeholder="اكتب ذكريتك هنا..." rows="3"></textarea>
+      <select id="memory-mood" required>
+        <option value="">اختر الحالة المزاجية</option>
+        <option value="سعيد">😊 سعيد</option>
+        <option value="فرح">😄 فرح</option>
+        <option value="محبة">❤️ محبة</option>
+        <option value="حزين">😢 حزين</option>
+        <option value="عادي">😐 عادي</option>
+      </select>
+      <button id="post-memory-btn">نشر الذكرى</button>
+      <div id="post-memory-message" class="message hidden"></div>
+    </section>
+
+    <!-- قائمة الذكريات -->
+    <section>
+      <h3>📜 ذكرياتك</h3>
+      <div id="memories-list">جارٍ تحميل الذكريات...</div>
+    </section>
+
+    <!-- دردشة -->
+    <section class="chat-container">
+      <h3>💬 الدردشة</h3>
+      <div id="chat-messages" class="chat-messages"></div>
+      <div class="chat-input">
+        <input id="chat-input-text" placeholder="اكتب رسالة..." />
+        <button id="send-chat-btn">إرسال</button>
+      </div>
+    </section>
   </div>
 
-  <div id="message" class="message hidden"></div>
-
-  <!-- Firebase SDKs -->
+  <!-- Firebase -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // Your Firebase configuration
+    // تكوين Firebase
     const firebaseConfig = {
       apiKey: "AIzaSyCKKkHfKFfwlgnEju0sk0s46t3DnG0bhtE",
       authDomain: "social-memories-89ec5.firebaseapp.com",
@@ -74,94 +199,27 @@
       measurementId: "G-6BRPV713MR"
     };
 
-    // Initialize Firebase
+    // تهيئة Firebase
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
+    const db = firebase.firestore();
 
-    // Elements
+    // عناصر DOM
+    const authSection = document.getElementById("auth-section");
     const emailInput = document.getElementById("email");
     const passwordInput = document.getElementById("password");
     const loginBtn = document.getElementById("login-btn");
     const signupBtn = document.getElementById("signup-btn");
-    const logoutBtn = document.getElementById("logout-btn");
-    const userInfo = document.getElementById("user-info");
+    const authMessage = document.getElementById("auth-message");
+
+    const userSection = document.getElementById("user-section");
     const userEmailSpan = document.getElementById("user-email");
-    const authForms = document.getElementById("auth-forms");
-    const messageDiv = document.getElementById("message");
+    const logoutBtn = document.getElementById("logout-btn");
 
-    // Show message helper
-    function showMessage(text, isError = false) {
-      messageDiv.textContent = text;
-      messageDiv.className = "message " + (isError ? "error" : "success");
-      messageDiv.classList.remove("hidden");
-      setTimeout(() => messageDiv.classList.add("hidden"), 5000);
-    }
+    const memoryText = document.getElementById("memory-text");
+    const memoryMood = document.getElementById("memory-mood");
+    const postMemoryBtn = document.getElementById("post-memory-btn");
+    const postMemoryMessage = document.getElementById("post-memory-message");
+    const memoriesList = document.getElementById("memories-list");
 
-    // Login handler
-    loginBtn.addEventListener("click", () => {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-
-      if (!email || !password) {
-        showMessage("يرجى إدخال البريد الإلكتروني وكلمة المرور", true);
-        return;
-      }
-
-      auth.signInWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          showMessage("تم تسجيل الدخول بنجاح");
-          emailInput.value = "";
-          passwordInput.value = "";
-        })
-        .catch((error) => {
-          showMessage("فشل تسجيل الدخول: " + error.message, true);
-        });
-    });
-
-    // Signup handler
-    signupBtn.addEventListener("click", () => {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-
-      if (!email || !password) {
-        showMessage("يرجى إدخال البريد الإلكتروني وكلمة المرور", true);
-        return;
-      }
-
-      auth.createUserWithEmailAndPassword(email, password)
-        .then((userCredential) => {
-          showMessage("تم إنشاء الحساب وتسجيل الدخول بنجاح");
-          emailInput.value = "";
-          passwordInput.value = "";
-        })
-        .catch((error) => {
-          showMessage("فشل إنشاء الحساب: " + error.message, true);
-        });
-    });
-
-    // Logout handler
-    logoutBtn.addEventListener("click", () => {
-      auth.signOut()
-        .then(() => {
-          showMessage("تم تسجيل الخروج");
-        })
-        .catch((error) => {
-          showMessage("فشل تسجيل الخروج: " + error.message, true);
-        });
-    });
-
-    // مراقبة حالة تسجيل الدخول
-    auth.onAuthStateChanged((user) => {
-      if (user) {
-        userEmailSpan.textContent = user.email;
-        authForms.classList.add("hidden");
-        userInfo.classList.remove("hidden");
-      } else {
-        authForms.classList.remove("hidden");
-        userInfo.classList.add("hidden");
-      }
-    });
-  </script>
-
-</body>
-</html>
+    const chatMessagesDiv = document.getElementById("chat

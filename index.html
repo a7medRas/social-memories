@@ -18,12 +18,13 @@
     position: fixed;
     width: 100%;
     bottom: 0;
+    z-index: 10;
   }
   nav button {
     background: none;
     border: none;
     color: white;
-    font-size: 18px;
+    font-size: 20px;
     cursor: pointer;
   }
   nav button:hover {
@@ -44,7 +45,7 @@
     border-radius: 6px;
   }
   .memory-buttons button {
-    margin-right: 10px;
+    margin-left: 10px;
     cursor: pointer;
   }
   .comment {
@@ -52,13 +53,6 @@
     margin: 6px 0 6px 20px;
     padding: 6px;
     border-radius: 4px;
-  }
-  .comment img {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    vertical-align: middle;
-    margin-left: 6px;
   }
   .chat-window {
     height: 300px;
@@ -81,6 +75,7 @@
     padding: 8px;
     margin: 6px 0 12px 0;
     box-sizing: border-box;
+    font-size: 16px;
   }
   button.submit-btn {
     background: #007bff;
@@ -95,6 +90,20 @@
   button.submit-btn:hover {
     background: #0056b3;
   }
+  ul#searchResults {
+    list-style: none;
+    padding: 0;
+  }
+  ul#searchResults li {
+    background: white;
+    margin-bottom: 6px;
+    padding: 8px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  ul#searchResults li:hover {
+    background: #cce5ff;
+  }
 </style>
 </head>
 <body>
@@ -107,4 +116,294 @@
 </nav>
 
 <div id="content">
-  <div id="memoriesSection" class="active"
+  <div id="memoriesSection" class="active">
+    <h2>📸 ذكريات</h2>
+    <div id="memoriesList">
+      <!-- الذكريات تظهر هنا -->
+    </div>
+  </div>
+
+  <div id="chatSection">
+    <h2>💬 دردشة</h2>
+    <div class="chat-window" id="chatWindow"></div>
+    <input type="text" id="chatInput" placeholder="اكتب رسالة..." />
+    <button id="sendChatBtn" class="submit-btn">إرسال</button>
+  </div>
+
+  <div id="searchSection">
+    <h2>🔍 البحث عن مستخدمين</h2>
+    <input type="text" id="searchInput" placeholder="ابحث باسم المستخدم..." autocomplete="off"/>
+    <ul id="searchResults"></ul>
+  </div>
+
+  <div id="newMemorySection">
+    <h2>📝 نشر ذكرى جديدة</h2>
+    <form id="memoryForm">
+      <input type="text" id="memoryTitle" placeholder="عنوان الذكرى" required />
+      <textarea id="memoryText" placeholder="اكتب محتوى الذكرى..." rows="4" required></textarea>
+      <label for="moodSelect">الحالة المزاجية:</label>
+      <select id="moodSelect" required>
+        <option value="">اختر الحالة</option>
+        <option value="سعيدة">😊 سعيدة</option>
+        <option value="فرح">😄 فرح</option>
+        <option value="محبة">❤️ محبة</option>
+        <option value="حزن">😢 حزن</option>
+        <option value="غضب">😠 غضب</option>
+      </select>
+      <br />
+      <label for="memoryImage">صورة (اختياري):</label><br />
+      <input type="file" id="memoryImage" accept="image/*" capture="environment" />
+      <br /><br />
+      <button type="submit" class="submit-btn">نشر الذكرى</button>
+    </form>
+  </div>
+</div>
+
+<script>
+// بيانات وهمية للمستخدمين والذكريات
+const users = [
+  { uid: "u1", displayName: "علي" },
+  { uid: "u2", displayName: "سارة" },
+  { uid: "u3", displayName: "محمد" },
+];
+
+let memories = [
+  {
+    id: "m1",
+    title: "رحلة إلى الشاطئ",
+    text: "قضيت يوم جميل على البحر مع الأصدقاء.",
+    mood: "سعيدة",
+    likes: 3,
+    commentsCount: 2,
+    comments: [
+      { displayName: "سارة", text: "ما شاء الله! صور رائعة 😊", photoURL: null },
+      { displayName: "علي", text: "متى نكررها؟", photoURL: null }
+    ],
+  },
+  {
+    id: "m2",
+    title: "حفلة عيد ميلاد",
+    text: "احتفلنا بعيد ميلاد أختي مع العائلة.",
+    mood: "فرح",
+    likes: 5,
+    commentsCount: 1,
+    comments: [
+      { displayName: "محمد", text: "عيد ميلاد سعيد! 🎉", photoURL: null },
+    ],
+  },
+];
+
+// التحكم في عرض الأقسام
+const btnLive = document.getElementById("btnLive");
+const btnChat = document.getElementById("btnChat");
+const btnSearch = document.getElementById("btnSearch");
+const btnNewMemory = document.getElementById("btnNewMemory");
+
+const memoriesSection = document.getElementById("memoriesSection");
+const newMemorySection = document.getElementById("newMemorySection");
+const chatSection = document.getElementById("chatSection");
+const searchSection = document.getElementById("searchSection");
+
+function hideAllSections() {
+  memoriesSection.classList.remove("active");
+  newMemorySection.classList.remove("active");
+  chatSection.classList.remove("active");
+  searchSection.classList.remove("active");
+}
+
+btnLive.addEventListener("click", () => {
+  alert("⚠️ خاصية البث المباشر قيد الصيانة حالياً");
+});
+
+btnChat.addEventListener("click", () => {
+  hideAllSections();
+  chatSection.classList.add("active");
+});
+
+btnSearch.addEventListener("click", () => {
+  hideAllSections();
+  searchSection.classList.add("active");
+});
+
+btnNewMemory.addEventListener("click", () => {
+  hideAllSections();
+  newMemorySection.classList.add("active");
+});
+
+window.onload = () => {
+  hideAllSections();
+  memoriesSection.classList.add("active");
+  renderMemories();
+};
+
+// عرض الذكريات
+function renderMemories() {
+  const container = document.getElementById("memoriesList");
+  container.innerHTML = "";
+  if (memories.length === 0) {
+    container.innerHTML = "<p>لا توجد ذكريات حتى الآن.</p>";
+    return;
+  }
+  memories.forEach((memory) => {
+    const div = document.createElement("div");
+    div.className = "memory";
+    div.dataset.id = memory.id;
+    div.innerHTML = `
+      <h3>${memory.title} <small>(${memory.mood})</small></h3>
+      <p>${memory.text}</p>
+      <div class="memory-buttons">
+        <button class="like-btn">👍 ${memory.likes}</button>
+        <button class="comment-btn">💬 ${memory.commentsCount}</button>
+      </div>
+      <div class="comments-list">
+        ${memory.comments
+          .map(
+            (c) =>
+              `<div class="comment">${c.photoURL ? `<img src="${c.photoURL}" alt="avatar" />` : ""}<strong>${c.displayName}:</strong> ${c.text}</div>`
+          )
+          .join("")}
+      </div>
+    `;
+    container.appendChild(div);
+  });
+
+  // أزرار الإعجاب
+  document.querySelectorAll(".like-btn").forEach((btn) => {
+    btn.onclick = (e) => {
+      const memoryDiv = e.target.closest(".memory");
+      const id = memoryDiv.dataset.id;
+      likeMemory(id);
+    };
+  });
+  // أزرار التعليق تفتح prompt
+  document.querySelectorAll(".comment-btn").forEach((btn) => {
+    btn.onclick = (e) => {
+      const memoryDiv = e.target.closest(".memory");
+      const id = memoryDiv.dataset.id;
+      commentMemory(id);
+    };
+  });
+}
+
+function likeMemory(id) {
+  const memory = memories.find((m) => m.id === id);
+  if (!memory) return;
+  memory.likes++;
+  renderMemories();
+}
+
+function commentMemory(id) {
+  const memory = memories.find((m) => m.id === id);
+  if (!memory) return;
+  const commentText = prompt("أضف تعليقك:");
+  if (commentText && commentText.trim() !== "") {
+    memory.comments.push({ displayName: "أنت", text: commentText.trim(), photoURL: null });
+    memory.commentsCount++;
+    renderMemories();
+  }
+}
+
+// دردشة وهمية بسيطة
+const chatWindow = document.getElementById("chatWindow");
+const chatInput = document.getElementById("chatInput");
+const sendChatBtn = document.getElementById("sendChatBtn");
+
+function addChatMessage(text, isUser = true) {
+  const div = document.createElement("div");
+  div.className = "chat-message";
+  if (isUser) div.classList.add("user");
+  div.textContent = text;
+  chatWindow.appendChild(div);
+  chatWindow.scrollTop = chatWindow.scrollHeight;
+}
+
+sendChatBtn.onclick = () => {
+  const msg = chatInput.value.trim();
+  if (msg === "") return;
+  addChatMessage(msg, true);
+  chatInput.value = "";
+  setTimeout(() => {
+    addChatMessage("رد تلقائي: " + msg.split("").reverse().join(""), false);
+  }, 1000);
+};
+
+// بحث مستخدمين وهمي
+const searchInput = document.getElementById("searchInput");
+const searchResults = document.getElementById("searchResults");
+
+searchInput.addEventListener("input", () => {
+  const q = searchInput.value.trim().toLowerCase();
+  searchResults.innerHTML = "";
+  if (q === "") return;
+  const filtered = users.filter((u) => u.displayName.toLowerCase().includes(q));
+  if (filtered.length === 0) {
+    searchResults.innerHTML = "<li>لا يوجد مستخدمين.</li>";
+    return;
+  }
+  filtered.forEach((user) => {
+    const li = document.createElement("li");
+    li.textContent = user.displayName;
+    searchResults.appendChild(li);
+  });
+});
+
+// نشر ذكرى جديدة
+const memoryForm = document.getElementById("memoryForm");
+const memoryTitle = document.getElementById("memoryTitle");
+const memoryText = document.getElementById("memoryText");
+const moodSelect = document.getElementById("moodSelect");
+const memoryImage = document.getElementById("memoryImage");
+
+memoryForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const title = memoryTitle.value.trim();
+  const text = memoryText.value.trim();
+  const mood = moodSelect.value;
+
+  if (!title || !text || !mood) {
+    alert("يرجى ملء جميع الحقول المطلوبة.");
+    return;
+  }
+
+  const newMemory = {
+    id: "m" + (memories.length + 1),
+    title,
+    text,
+    mood,
+    likes: 0,
+    commentsCount: 0,
+    comments: [],
+  };
+
+  // دعم تحميل صورة بشكل بسيط كـ base64
+  if (memoryImage.files.length > 0) {
+    const file = memoryImage.files[0];
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      newMemory.imageData = event.target.result; // base64 image
+      memories.unshift(newMemory);
+      resetMemoryForm();
+      renderMemories();
+      hideAllSections();
+      memoriesSection.classList.add("active");
+    };
+    reader.readAsDataURL(file);
+  } else {
+    memories.unshift(newMemory);
+    resetMemoryForm();
+    renderMemories();
+    hideAllSections();
+    memoriesSection.classList.add("active");
+  }
+});
+
+function resetMemoryForm() {
+  memoryTitle.value = "";
+  memoryText.value = "";
+  moodSelect.value = "";
+  memoryImage.value = "";
+}
+</script>
+
+</body>
+</html>

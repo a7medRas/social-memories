@@ -3,12 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>💬 ذكريات اجتماعية</title>
+  <title>📸 ذكريات اجتماعية</title>
   <style>
-    body { font-family: Tahoma, sans-serif; padding: 20px; background: #f9f9f9; }
+    body { font-family: Tahoma, sans-serif; padding: 20px; background: #f1f1f1; }
     .card { background: white; padding: 15px; margin: 10px 0; border-radius: 8px; box-shadow: 0 0 5px #ccc; }
-    button { margin-top: 10px; padding: 8px 12px; border: none; background: #007bff; color: white; border-radius: 4px; cursor: pointer; }
-    input { padding: 8px; margin: 5px 0; width: 100%; }
+    button { margin: 5px 5px 0 0; padding: 8px 12px; border: none; background: #007bff; color: white; border-radius: 4px; cursor: pointer; }
+    input, select, textarea { padding: 8px; margin: 5px 0; width: 100%; }
+    video, img.preview { width: 100%; max-height: 200px; object-fit: cover; margin-top: 5px; }
   </style>
 </head>
 <body>
@@ -24,13 +25,31 @@
 
   <div id="contentArea" style="display:none;">
     <h2>👤 أهلاً بك!</h2>
-    <button onclick="generateFakeMemories()">✨ توليد ذكريات وهمية</button>
+    <button onclick="showNewMemoryForm()">➕ نشر ذكرى جديدة</button>
+    <div id="newMemoryForm" style="display:none;">
+      <input type="text" id="memoryTitle" placeholder="📌 عنوان الذكرى" />
+      <select id="feeling">
+        <option value="">😐 الحالة</option>
+        <option value="سعيد">😊 سعيد</option>
+        <option value="فرح">😁 فرح</option>
+        <option value="محبة">❤️ محبة</option>
+        <option value="حزين">😢 حزين</option>
+      </select>
+      <textarea id="memoryContent" placeholder="📝 وصف الذكرى..."></textarea>
+      <input type="file" id="imageUpload" accept="image/*" capture="environment" />
+      <button onclick="publishMemory()">🚀 نشر</button>
+    </div>
     <div id="memoriesContainer"></div>
+    <hr />
+    <h3>💬 الدردشة</h3>
+    <div id="chatBox"></div>
+    <input id="chatInput" placeholder="اكتب رسالة..." />
+    <button onclick="sendChat()">📤 إرسال</button>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, increment } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
     const firebaseConfig = {
@@ -57,44 +76,100 @@
       }
     }
 
+    function showNewMemoryForm() {
+      document.getElementById("newMemoryForm").style.display = "block";
+    }
+
+    async function publishMemory() {
+      const user = auth.currentUser;
+      const title = document.getElementById("memoryTitle").value;
+      const feeling = document.getElementById("feeling").value;
+      const content = document.getElementById("memoryContent").value;
+      const imageInput = document.getElementById("imageUpload");
+      let imageDataUrl = "";
+
+      if (imageInput.files.length > 0) {
+        const file = imageInput.files[0];
+        imageDataUrl = await toBase64(file);
+      }
+
+      await addDoc(collection(db, "users", user.uid, "memories"), {
+        title,
+        feeling,
+        content,
+        image: imageDataUrl,
+        likes: 0,
+        comments: [],
+        commentsCount: 0,
+        timestamp: serverTimestamp()
+      });
+
+      location.reload();
+    }
+
+    function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = (error) => reject(error);
+      });
+    }
+
     onAuthStateChanged(auth, async (user) => {
       if (!user) return;
       document.getElementById("loginArea").style.display = "none";
       document.getElementById("contentArea").style.display = "block";
 
-      const memoriesRef = collection(db, "users", user.uid, "memories");
-      const snap = await getDocs(memoriesRef);
+      const ref = collection(db, "users", user.uid, "memories");
+      const snap = await getDocs(ref);
       const container = document.getElementById("memoriesContainer");
       container.innerHTML = "";
 
-      if (snap.empty) {
-        container.innerHTML = "<p>لا توجد ذكريات بعد.</p>";
-      } else {
-        snap.forEach(doc => {
-          const mem = doc.data();
-          container.innerHTML += `
-            <div class="card">
-              <h3>${mem.title || "ذكرى بدون عنوان"}</h3>
-              <p>👍 ${mem.likes || 0} إعجاب</p>
-              <p>💬 ${mem.commentsCount || 0} تعليق</p>
-            </div>`;
-        });
-      }
+      snap.forEach(docSnap => {
+        const mem = docSnap.data();
+        const id = docSnap.id;
+        container.innerHTML += `
+          <div class="card">
+            <h3>${mem.title}</h3>
+            <p>${mem.feeling ? '😊 يشعر بـ ' + mem.feeling : ''}</p>
+            <p>${mem.content || ''}</p>
+            ${mem.image ? `<img src="${mem.image}" class="preview" />` : ''}
+            <p>👍 <span id="like-${id}">${mem.likes}</span> إعجاب</p>
+            <p>💬 <span id="comment-count-${id}">${mem.commentsCount}</span> تعليق</p>
+            <button onclick="likeMemory('${user.uid}', '${id}')">👍 إعجاب</button>
+            <button onclick="commentMemory('${user.uid}', '${id}')">💬 تعليق</button>
+          </div>`;
+      });
     });
 
-    window.generateFakeMemories = async () => {
+    window.likeMemory = async (uid, memId) => {
+      const ref = doc(db, "users", uid, "memories", memId);
+      await updateDoc(ref, { likes: increment(1) });
+      const el = document.getElementById("like-" + memId);
+      el.textContent = parseInt(el.textContent) + 1;
+    };
+
+    window.commentMemory = async (uid, memId) => {
+      const text = prompt("📝 أدخل تعليقك:");
+      if (!text) return;
+      const ref = doc(db, "users", uid, "memories", memId);
+      await updateDoc(ref, { commentsCount: increment(1) });
+      const el = document.getElementById("comment-count-" + memId);
+      el.textContent = parseInt(el.textContent) + 1;
+    };
+
+    window.sendChat = async () => {
       const user = auth.currentUser;
-      if (!user) return alert("يجب تسجيل الدخول أولًا.");
-      const ref = collection(db, "users", user.uid, "memories");
-      for (let i = 1; i <= 3; i++) {
-        await addDoc(ref, {
-          title: "ذكرى تجريبية " + i,
-          likes: Math.floor(Math.random() * 10),
-          commentsCount: Math.floor(Math.random() * 5)
-        });
-      }
-      location.reload();
-    }
+      const msg = document.getElementById("chatInput").value;
+      if (!msg) return;
+      await addDoc(collection(db, "chat"), {
+        user: user.email,
+        text: msg,
+        timestamp: serverTimestamp()
+      });
+      document.getElementById("chatInput").value = "";
+    };
   </script>
 </body>
 </html>

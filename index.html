@@ -3,330 +3,149 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Social Memories - Firebase</title>
+<title>تسجيل دخول Firebase - تجربة</title>
 <style>
   body {
     font-family: Arial, sans-serif;
-    margin: 0; padding: 0; background: #f0f2f5;
+    background: #f5f5f5;
+    padding: 20px;
   }
-  nav {
-    display: flex;
-    justify-content: space-around;
-    background: #007bff;
-    color: white;
-    padding: 12px 0;
-    position: fixed;
-    width: 100%;
-    bottom: 0;
-    z-index: 10;
-  }
-  nav button {
-    background: none;
-    border: none;
-    color: white;
-    font-size: 20px;
-    cursor: pointer;
-  }
-  nav button:hover {
-    text-decoration: underline;
-  }
-  #content > div {
-    display: none;
-    padding: 16px;
-    margin-bottom: 60px; /* space for fixed nav */
-  }
-  #content > div.active {
-    display: block;
-  }
-  .memory {
+  #loginForm {
+    max-width: 400px;
+    margin: auto;
     background: white;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  input {
+    width: 100%;
     padding: 10px;
-    margin-bottom: 10px;
-    border-radius: 6px;
-  }
-  .memory-buttons button {
-    margin-left: 10px;
-    cursor: pointer;
-  }
-  .comment {
-    background: #eef1f6;
-    margin: 6px 0 6px 20px;
-    padding: 6px;
-    border-radius: 4px;
-  }
-  .chat-window {
-    height: 300px;
+    margin: 8px 0 16px 0;
     border: 1px solid #ccc;
-    background: white;
-    overflow-y: auto;
-    padding: 8px;
     border-radius: 6px;
-    margin-bottom: 8px;
   }
-  .chat-message {
-    margin-bottom: 6px;
-  }
-  .chat-message.user {
-    text-align: right;
-    font-weight: bold;
-  }
-  input[type="text"], select, textarea {
+  button {
     width: 100%;
-    padding: 8px;
-    margin: 6px 0 12px 0;
-    box-sizing: border-box;
-    font-size: 16px;
-  }
-  button.submit-btn {
-    background: #007bff;
-    color: white;
+    padding: 12px;
+    background-color: #007bff;
     border: none;
-    padding: 10px;
-    width: 100%;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 16px;
-  }
-  button.submit-btn:hover {
-    background: #0056b3;
-  }
-  ul#searchResults {
-    list-style: none;
-    padding: 0;
-  }
-  ul#searchResults li {
-    background: white;
-    margin-bottom: 6px;
-    padding: 8px;
+    color: white;
+    font-size: 18px;
     border-radius: 6px;
     cursor: pointer;
   }
-  ul#searchResults li:hover {
-    background: #cce5ff;
+  button:hover {
+    background-color: #0056b3;
   }
-  #loginSection {
-    padding: 16px;
+  #message {
+    color: red;
+    margin-top: 10px;
   }
-  #logoutBtn {
-    background: #dc3545;
-    color: white;
-    border: none;
-    padding: 8px 12px;
-    cursor: pointer;
-    border-radius: 4px;
-    float: left;
+  #welcome {
+    display: none;
+    text-align: center;
   }
 </style>
 </head>
 <body>
 
-<nav>
-  <button id="btnLive">🔴 بث مباشر</button>
-  <button id="btnChat">💬 دردشة</button>
-  <button id="btnSearch">🔍 بحث مستخدمين</button>
-  <button id="btnNewMemory">📝 نشر ذكرى جديدة</button>
-  <button id="logoutBtn" style="display:none;">تسجيل خروج</button>
-</nav>
-
-<div id="content">
-  <div id="loginSection" class="active">
-    <h2>تسجيل الدخول</h2>
-    <input type="email" id="emailInput" placeholder="البريد الإلكتروني" required />
-    <input type="password" id="passwordInput" placeholder="كلمة المرور" required />
-    <button id="loginBtn" class="submit-btn">تسجيل الدخول</button>
-    <p>أو <button id="signupBtn" class="submit-btn">إنشاء حساب جديد</button></p>
-    <p id="loginMsg" style="color:red;"></p>
-  </div>
-
-  <div id="memoriesSection">
-    <h2>📸 ذكريات</h2>
-    <div id="memoriesList">
-      جاري التحميل...
-    </div>
-  </div>
-
-  <div id="chatSection">
-    <h2>💬 دردشة</h2>
-    <div class="chat-window" id="chatWindow"></div>
-    <input type="text" id="chatInput" placeholder="اكتب رسالة..." />
-    <button id="sendChatBtn" class="submit-btn">إرسال</button>
-  </div>
-
-  <div id="searchSection">
-    <h2>🔍 البحث عن مستخدمين</h2>
-    <input type="text" id="searchInput" placeholder="ابحث باسم المستخدم..." autocomplete="off"/>
-    <ul id="searchResults"></ul>
-  </div>
-
-  <div id="newMemorySection">
-    <h2>📝 نشر ذكرى جديدة</h2>
-    <form id="memoryForm">
-      <input type="text" id="memoryTitle" placeholder="عنوان الذكرى" required />
-      <textarea id="memoryText" placeholder="اكتب محتوى الذكرى..." rows="4" required></textarea>
-      <label for="moodSelect">الحالة المزاجية:</label>
-      <select id="moodSelect" required>
-        <option value="">اختر الحالة</option>
-        <option value="سعيدة">😊 سعيدة</option>
-        <option value="فرح">😄 فرح</option>
-        <option value="محبة">❤️ محبة</option>
-        <option value="حزن">😢 حزن</option>
-        <option value="غضب">😠 غضب</option>
-      </select>
-      <br />
-      <label for="memoryImage">صورة (اختياري):</label><br />
-      <input type="file" id="memoryImage" accept="image/*" capture="environment" />
-      <br /><br />
-      <button type="submit" class="submit-btn">نشر الذكرى</button>
-    </form>
-  </div>
+<div id="loginForm">
+  <h2>تسجيل الدخول</h2>
+  <input type="email" id="email" placeholder="البريد الإلكتروني" required />
+  <input type="password" id="password" placeholder="كلمة المرور" required />
+  <button id="loginBtn">تسجيل الدخول</button>
+  <button id="signupBtn" style="margin-top:10px; background:#28a745;">إنشاء حساب جديد</button>
+  <p id="message"></p>
 </div>
 
+<div id="welcome">
+  <h2>مرحباً بك!</h2>
+  <button id="logoutBtn" style="background:#dc3545;">تسجيل خروج</button>
+</div>
+
+<!-- Firebase SDKs -->
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
 
 <script>
-// ======= إعدادات Firebase الخاص بك =======
-const firebaseConfig = {
-  apiKey: "ضع هنا apiKey من Firebase",
-  authDomain: "ضع هنا authDomain من Firebase",
-  projectId: "ضع هنا projectId من Firebase",
-  storageBucket: "ضع هنا storageBucket من Firebase",
-  messagingSenderId: "ضع هنا messagingSenderId من Firebase",
-  appId: "ضع هنا appId من Firebase"
-};
+  // إعدادات Firebase - استبدل القيم بقيم مشروعك
+  const firebaseConfig = {
+    apiKey: "ضع هنا apiKey",
+    authDomain: "ضع هنا authDomain",
+    projectId: "ضع هنا projectId",
+    storageBucket: "ضع هنا storageBucket",
+    messagingSenderId: "ضع هنا messagingSenderId",
+    appId: "ضع هنا appId"
+  };
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-const storage = firebase.storage();
+  // تهيئة Firebase
+  firebase.initializeApp(firebaseConfig);
+  const auth = firebase.auth();
 
-// عناصر DOM
-const loginSection = document.getElementById("loginSection");
-const memoriesSection = document.getElementById("memoriesSection");
-const chatSection = document.getElementById("chatSection");
-const searchSection = document.getElementById("searchSection");
-const newMemorySection = document.getElementById("newMemorySection");
+  const loginForm = document.getElementById("loginForm");
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+  const loginBtn = document.getElementById("loginBtn");
+  const signupBtn = document.getElementById("signupBtn");
+  const messageP = document.getElementById("message");
 
-const logoutBtn = document.getElementById("logoutBtn");
+  const welcomeDiv = document.getElementById("welcome");
+  const logoutBtn = document.getElementById("logoutBtn");
 
-const btnLive = document.getElementById("btnLive");
-const btnChat = document.getElementById("btnChat");
-const btnSearch = document.getElementById("btnSearch");
-const btnNewMemory = document.getElementById("btnNewMemory");
+  // تسجيل الدخول
+  loginBtn.addEventListener("click", () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    messageP.textContent = "";
+    if(!email || !password){
+      messageP.textContent = "يرجى إدخال البريد الإلكتروني وكلمة المرور";
+      return;
+    }
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => {
+        messageP.textContent = "";
+      })
+      .catch((error) => {
+        messageP.textContent = "فشل تسجيل الدخول: " + error.message;
+      });
+  });
 
-const memoriesList = document.getElementById("memoriesList");
+  // إنشاء حساب جديد
+  signupBtn.addEventListener("click", () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    messageP.textContent = "";
+    if(!email || !password){
+      messageP.textContent = "يرجى إدخال البريد الإلكتروني وكلمة المرور";
+      return;
+    }
+    auth.createUserWithEmailAndPassword(email, password)
+      .then(() => {
+        messageP.textContent = "";
+      })
+      .catch((error) => {
+        messageP.textContent = "فشل إنشاء الحساب: " + error.message;
+      });
+  });
 
-const chatWindow = document.getElementById("chatWindow");
-const chatInput = document.getElementById("chatInput");
-const sendChatBtn = document.getElementById("sendChatBtn");
+  // متابعة حالة تسجيل الدخول
+  auth.onAuthStateChanged((user) => {
+    if(user){
+      // المستخدم مسجل الدخول
+      loginForm.style.display = "none";
+      welcomeDiv.style.display = "block";
+    } else {
+      // لا يوجد مستخدم مسجل الدخول
+      loginForm.style.display = "block";
+      welcomeDiv.style.display = "none";
+    }
+  });
 
-const searchInput = document.getElementById("searchInput");
-const searchResults = document.getElementById("searchResults");
+  // تسجيل خروج
+  logoutBtn.addEventListener("click", () => {
+    auth.signOut();
+  });
+</script>
 
-const memoryForm = document.getElementById("memoryForm");
-const memoryTitle = document.getElementById("memoryTitle");
-const memoryText = document.getElementById("memoryText");
-const moodSelect = document.getElementById("moodSelect");
-const memoryImage = document.getElementById("memoryImage");
-
-const emailInput = document.getElementById("emailInput");
-const passwordInput = document.getElementById("passwordInput");
-const loginBtn = document.getElementById("loginBtn");
-const signupBtn = document.getElementById("signupBtn");
-const loginMsg = document.getElementById("loginMsg");
-
-let currentUser = null;
-
-function hideAllSections() {
-  loginSection.style.display = "none";
-  memoriesSection.style.display = "none";
-  chatSection.style.display = "none";
-  searchSection.style.display = "none";
-  newMemorySection.style.display = "none";
-  logoutBtn.style.display = "none";
-}
-
-function showSection(section) {
-  hideAllSections();
-  section.style.display = "block";
-  if(section !== loginSection){
-    logoutBtn.style.display = "inline-block";
-  }
-}
-
-btnLive.addEventListener("click", () => {
-  alert("⚠️ خاصية البث المباشر قيد الصيانة حالياً");
-});
-btnChat.addEventListener("click", () => showSection(chatSection));
-btnSearch.addEventListener("click", () => showSection(searchSection));
-btnNewMemory.addEventListener("click", () => showSection(newMemorySection));
-logoutBtn.addEventListener("click", () => {
-  auth.signOut();
-});
-
-// ======= تسجيل دخول وإنشاء حساب =======
-loginBtn.onclick = () => {
-  loginMsg.textContent = "";
-  const email = emailInput.value.trim();
-  const password = passwordInput.value.trim();
-  if(!email || !password) {
-    loginMsg.textContent = "يرجى إدخال البريد وكلمة المرور.";
-    return;
-  }
-  auth.signInWithEmailAndPassword(email, password)
-    .then(() => {
-      loginMsg.textContent = "";
-    })
-    .catch(err => {
-      loginMsg.textContent = "خطأ في تسجيل الدخول: " + err.message;
-    });
-};
-
-signupBtn.onclick = () => {
-  loginMsg.textContent = "";
-  const email = emailInput.value.trim();
-  const password = passwordInput.value.trim();
-  if(!email || !password) {
-    loginMsg.textContent = "يرجى إدخال البريد وكلمة المرور.";
-    return;
-  }
-  auth.createUserWithEmailAndPassword(email, password)
-    .then(() => {
-      loginMsg.textContent = "";
-    })
-    .catch(err => {
-      loginMsg.textContent = "خطأ في إنشاء الحساب: " + err.message;
-    });
-};
-
-// ======= متابعة حالة تسجيل الدخول =======
-auth.onAuthStateChanged(user => {
-  if(user){
-    currentUser = user;
-    showSection(memoriesSection);
-    loadMemories();
-    listenToChats();
-    loadUsers();
-  } else {
-    currentUser = null;
-    showSection(loginSection);
-  }
-});
-
-// ======= عرض الذكريات من Firestore =======
-function loadMemories(){
-  memoriesList.innerHTML = "جاري تحميل الذكريات...";
-  db.collection("memories")
-    .orderBy("createdAt", "desc")
-    .onSnapshot(snapshot => {
-      memoriesList.innerHTML = "";
-      if(snapshot.empty){
-        memoriesList.innerHTML = "<p>لا توجد ذكريات حتى الآن.</p>";
-        return;
-      }
-      snapshot.forEach(doc => {
-        const memory = doc.data();
-        const div = document.createElement("div");
-       
+</body>
+</html>

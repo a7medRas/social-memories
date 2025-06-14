@@ -1,72 +1,29 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-  <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>جدار الذكريات</title>
-  <style>
-    body { font-family: Tahoma, sans-serif; margin:0; padding:20px; background:#fff; color:#222; transition:.3s; }
-    .container { max-width:600px; margin:0 auto; }
-    @media (prefers-color-scheme: dark) {
-      body { background:#111; color:#eee; }
-      .card { background:#222; border-color:#333; }
-      .btn { opacity:.9; }
-    }
-    .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
-    .live { background:red;color:#fff;padding:4px 8px;border-radius:6px; }
-    .chat { cursor:pointer; font-size:18px; }
-    .btn { padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:14px; }
-    .btn.new { background:#0d6efd;color:#fff;width:100%;margin:15px 0; }
-    .btn.like { background:#0d6efd;color:#fff; }
-    .btn.comment { background:#198754;color:#fff; }
-    .card { background:#f5f5f5; padding:15px; margin-bottom:15px; border-radius:8px; border:1px solid #ddd; }
-    .actions { display:flex; gap:10px; margin-top:10px; }
-    .comment-list { margin-top:10px; }
-    .comment { margin-top:8px; border-top:1px solid #ccc; padding-top:5px; display:flex; align-items:center; gap:8px; }
-    .comment img { width:28px; height:28px; border-radius:50%; }
-    input { padding:6px; margin-right:5px; border:1px solid #ccc; border-radius:4px; }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <div class="top">
-      <div class="live">🔴 Live</div>
-      <div class="chat">💬</div>
-      <div id="userButtons"></div>
-    </div>
-
-    <button class="btn new" id="addMemoryBtn" onclick="addMemory()" style="display:none;">➕ ذكرى جديدة</button>
-
-    <div id="memoriesContainer"></div>
-  </div>
-
+<!DOCTYPE html><html lang="ar" dir="rtl"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>اختبار الذكريات</title><style>body{font-family:Tahoma,sans-serif;padding:20px;} .card{background:#f5f5f5;padding:10px;margin:10px 0;border-radius:6px;}</style></head><body>
+  <h1>🔴 Live | 💬 الدردشة</h1>
+  <div id="memoriesContainer"><p>يتم التحميل...</p></div>
+  
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, collection, doc, addDoc, updateDoc, increment, query, orderBy, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-    // 🔧 Firebase configuration
     const firebaseConfig = {
-      apiKey: "...",
-      authDomain: "...",
-      projectId: "...",
-      storageBucket: "...",
-      messagingSenderId: "...",
-      appId: "...",
-      measurementId: "..."
+      apiKey: "… استبدل بالقيم الحقيقية …",
+      authDomain: "…",
+      projectId: "…",
+      storageBucket: "…",
+      messagingSenderId: "…",
+      appId: "…",
+      measurementId: "…"
     };
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-    const memoriesCol = collection(db, "memories");
-    const commentsCol = mid => collection(db, "memories", mid, "comments");
 
-    const container = document.getElementById("memoriesContainer");
-    const addBtn = document.getElementById("addMemoryBtn");
-    const userButtons = document.getElementById("userButtons");
-    let currentUser = null;
-
-    function loginUI() {
-      userButtons.innerHTML = `
-        <input type="email" id="email" placeholder="البريد"/>
-        <input type="
+    onAuthStateChanged(auth, user => {
+      document.getElementById("memoriesContainer").innerHTML = user
+        ? "<p>✔️ تسجيل دخول ناجح: " + (user.email||user.displayName) + "</p>"
+        : "<p>❌ لم يتم تسجيل الدخول</p>";
+    });
+  </script>
+</body></html>

@@ -1,151 +1,167 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>تسجيل دخول Firebase - تجربة</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #f5f5f5;
-    padding: 20px;
-  }
-  #loginForm {
-    max-width: 400px;
-    margin: auto;
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-  }
-  input {
-    width: 100%;
-    padding: 10px;
-    margin: 8px 0 16px 0;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-  }
-  button {
-    width: 100%;
-    padding: 12px;
-    background-color: #007bff;
-    border: none;
-    color: white;
-    font-size: 18px;
-    border-radius: 6px;
-    cursor: pointer;
-  }
-  button:hover {
-    background-color: #0056b3;
-  }
-  #message {
-    color: red;
-    margin-top: 10px;
-  }
-  #welcome {
-    display: none;
-    text-align: center;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>تسجيل الدخول بـ Firebase</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 400px;
+      margin: 2rem auto;
+      padding: 1rem;
+      background: #f0f0f0;
+      direction: rtl;
+    }
+    input, button {
+      width: 100%;
+      margin: 0.5rem 0;
+      padding: 0.5rem;
+      font-size: 1rem;
+    }
+    button {
+      cursor: pointer;
+    }
+    .hidden {
+      display: none;
+    }
+    .message {
+      margin-top: 1rem;
+      padding: 0.5rem;
+      border-radius: 4px;
+    }
+    .error {
+      background-color: #fdd;
+      color: #900;
+    }
+    .success {
+      background-color: #dfd;
+      color: #090;
+    }
+  </style>
 </head>
 <body>
 
-<div id="loginForm">
-  <h2>تسجيل الدخول</h2>
-  <input type="email" id="email" placeholder="البريد الإلكتروني" required />
-  <input type="password" id="password" placeholder="كلمة المرور" required />
-  <button id="loginBtn">تسجيل الدخول</button>
-  <button id="signupBtn" style="margin-top:10px; background:#28a745;">إنشاء حساب جديد</button>
-  <p id="message"></p>
-</div>
+  <h2>تسجيل الدخول أو إنشاء حساب جديد</h2>
 
-<div id="welcome">
-  <h2>مرحباً بك!</h2>
-  <button id="logoutBtn" style="background:#dc3545;">تسجيل خروج</button>
-</div>
+  <div id="auth-forms">
+    <input id="email" type="email" placeholder="البريد الإلكتروني" required />
+    <input id="password" type="password" placeholder="كلمة المرور" required />
+    <button id="login-btn">تسجيل الدخول</button>
+    <button id="signup-btn">إنشاء حساب جديد</button>
+  </div>
 
-<!-- Firebase SDKs -->
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+  <div id="user-info" class="hidden">
+    <p>مرحباً، <span id="user-email"></span></p>
+    <button id="logout-btn">تسجيل الخروج</button>
+  </div>
 
-<script>
-  // إعدادات Firebase - استبدل القيم بقيم مشروعك
-  const firebaseConfig = {
-    apiKey: "ضع هنا apiKey",
-    authDomain: "ضع هنا authDomain",
-    projectId: "ضع هنا projectId",
-    storageBucket: "ضع هنا storageBucket",
-    messagingSenderId: "ضع هنا messagingSenderId",
-    appId: "ضع هنا appId"
-  };
+  <div id="message" class="message hidden"></div>
 
-  // تهيئة Firebase
-  firebase.initializeApp(firebaseConfig);
-  const auth = firebase.auth();
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 
-  const loginForm = document.getElementById("loginForm");
-  const emailInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
-  const loginBtn = document.getElementById("loginBtn");
-  const signupBtn = document.getElementById("signupBtn");
-  const messageP = document.getElementById("message");
+  <script>
+    // Your Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCKKkHfKFfwlgnEju0sk0s46t3DnG0bhtE",
+      authDomain: "social-memories-89ec5.firebaseapp.com",
+      projectId: "social-memories-89ec5",
+      storageBucket: "social-memories-89ec5.appspot.com",
+      messagingSenderId: "227392608508",
+      appId: "1:227392608508:web:450fc4d2dece0329f39f79",
+      measurementId: "G-6BRPV713MR"
+    };
 
-  const welcomeDiv = document.getElementById("welcome");
-  const logoutBtn = document.getElementById("logoutBtn");
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
 
-  // تسجيل الدخول
-  loginBtn.addEventListener("click", () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-    messageP.textContent = "";
-    if(!email || !password){
-      messageP.textContent = "يرجى إدخال البريد الإلكتروني وكلمة المرور";
-      return;
+    // Elements
+    const emailInput = document.getElementById("email");
+    const passwordInput = document.getElementById("password");
+    const loginBtn = document.getElementById("login-btn");
+    const signupBtn = document.getElementById("signup-btn");
+    const logoutBtn = document.getElementById("logout-btn");
+    const userInfo = document.getElementById("user-info");
+    const userEmailSpan = document.getElementById("user-email");
+    const authForms = document.getElementById("auth-forms");
+    const messageDiv = document.getElementById("message");
+
+    // Show message helper
+    function showMessage(text, isError = false) {
+      messageDiv.textContent = text;
+      messageDiv.className = "message " + (isError ? "error" : "success");
+      messageDiv.classList.remove("hidden");
+      setTimeout(() => messageDiv.classList.add("hidden"), 5000);
     }
-    auth.signInWithEmailAndPassword(email, password)
-      .then(() => {
-        messageP.textContent = "";
-      })
-      .catch((error) => {
-        messageP.textContent = "فشل تسجيل الدخول: " + error.message;
-      });
-  });
 
-  // إنشاء حساب جديد
-  signupBtn.addEventListener("click", () => {
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
-    messageP.textContent = "";
-    if(!email || !password){
-      messageP.textContent = "يرجى إدخال البريد الإلكتروني وكلمة المرور";
-      return;
-    }
-    auth.createUserWithEmailAndPassword(email, password)
-      .then(() => {
-        messageP.textContent = "";
-      })
-      .catch((error) => {
-        messageP.textContent = "فشل إنشاء الحساب: " + error.message;
-      });
-  });
+    // Login handler
+    loginBtn.addEventListener("click", () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
 
-  // متابعة حالة تسجيل الدخول
-  auth.onAuthStateChanged((user) => {
-    if(user){
-      // المستخدم مسجل الدخول
-      loginForm.style.display = "none";
-      welcomeDiv.style.display = "block";
-    } else {
-      // لا يوجد مستخدم مسجل الدخول
-      loginForm.style.display = "block";
-      welcomeDiv.style.display = "none";
-    }
-  });
+      if (!email || !password) {
+        showMessage("يرجى إدخال البريد الإلكتروني وكلمة المرور", true);
+        return;
+      }
 
-  // تسجيل خروج
-  logoutBtn.addEventListener("click", () => {
-    auth.signOut();
-  });
-</script>
+      auth.signInWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          showMessage("تم تسجيل الدخول بنجاح");
+          emailInput.value = "";
+          passwordInput.value = "";
+        })
+        .catch((error) => {
+          showMessage("فشل تسجيل الدخول: " + error.message, true);
+        });
+    });
+
+    // Signup handler
+    signupBtn.addEventListener("click", () => {
+      const email = emailInput.value.trim();
+      const password = passwordInput.value.trim();
+
+      if (!email || !password) {
+        showMessage("يرجى إدخال البريد الإلكتروني وكلمة المرور", true);
+        return;
+      }
+
+      auth.createUserWithEmailAndPassword(email, password)
+        .then((userCredential) => {
+          showMessage("تم إنشاء الحساب وتسجيل الدخول بنجاح");
+          emailInput.value = "";
+          passwordInput.value = "";
+        })
+        .catch((error) => {
+          showMessage("فشل إنشاء الحساب: " + error.message, true);
+        });
+    });
+
+    // Logout handler
+    logoutBtn.addEventListener("click", () => {
+      auth.signOut()
+        .then(() => {
+          showMessage("تم تسجيل الخروج");
+        })
+        .catch((error) => {
+          showMessage("فشل تسجيل الخروج: " + error.message, true);
+        });
+    });
+
+    // مراقبة حالة تسجيل الدخول
+    auth.onAuthStateChanged((user) => {
+      if (user) {
+        userEmailSpan.textContent = user.email;
+        authForms.classList.add("hidden");
+        userInfo.classList.remove("hidden");
+      } else {
+        authForms.classList.remove("hidden");
+        userInfo.classList.add("hidden");
+      }
+    });
+  </script>
 
 </body>
 </html>

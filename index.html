@@ -8,144 +8,64 @@
     body {
       font-family: 'Tahoma', sans-serif;
       margin: 0;
-      padding: 0;
-      background-color: #fff;
+      padding: 20px;
+      background: #fff;
       color: #222;
-      transition: 0.3s;
+      transition: .3s;
     }
     .container {
       max-width: 600px;
       margin: 0 auto;
-      padding: 20px;
     }
     @media (prefers-color-scheme: dark) {
-      body {
-        background-color: #111;
-        color: #eee;
-      }
+      body { background: #111; color: #eee; }
       .card { background: #222; border-color: #333; }
-      .btn { opacity: 0.9; }
+      .btn { opacity: .9; }
     }
-    .top { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
-    .top .live { background: red; color: white; padding: 4px 8px; border-radius: 6px; }
-    .top .chat { cursor: pointer; }
-    .card { background: #f5f5f5; padding: 15px; margin-bottom: 15px; border-radius: 8px; border: 1px solid #ddd; }
-    .card h3 { margin: 0 0 10px 0; }
-    .actions { display: flex; gap: 10px; margin-top: 10px;}
-    .btn { padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
-    .btn.new { background: #0d6efd; color: white; width: 100%; margin: 15px 0; }
-    .btn.like { background: #0d6efd; color: white; }
-    .btn.comment { background: #198754; color: white; }
-    .comment-list { margin: 10px 0 0 0; }
-    .comment { margin-top: 8px; border-top: 1px solid #ccc; padding-top: 5px; display: flex; align-items: center; gap: 8px; }
-    .comment img { width: 28px;height:28px;border-radius:50%; }
-    #loginBtn { padding: 8px 12px; background: #4285F4; color: white; border:none; border-radius:6px; cursor:pointer; }
-    #logoutBtn { padding: 4px 8px; margin-right: 10px; cursor:pointer; }
-    #welcome { margin-right: 10px; }
+    .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
+    .live { background:red;color:#fff;padding:4px 8px;border-radius:6px; }
+    .chat { cursor: pointer; }
+    .btn {
+      padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:14px;
+    }
+    .btn.new { background:#0d6efd;color:#fff;width:100%;margin:15px 0; }
+    .btn.like { background:#0d6efd;color:#fff; }
+    .btn.comment { background:#198754;color:#fff; }
+    .card {
+      background:#f5f5f5; padding:15px; margin-bottom:15px; border-radius:8px; border:1px solid #ddd;
+    }
+    .actions { display:flex; gap:10px; margin-top:10px; }
+    .comment-list { margin-top:10px; }
+    .comment {
+      margin-top:8px; border-top:1px solid #ccc; padding-top:5px;
+      display:flex;align-items:center;gap:8px;
+    }
+    .comment img { width:28px;height:28px;border-radius:50%; }
+    #userButtons { margin-left: auto; }
+    #memoriesContainer { margin-top:20px; }
   </style>
 </head>
-<body class="container">
-  <div class="top">
-    <div class="live">🔴 Live</div>
-    <div class="chat">💬 دردشة</div>
-    <div id="userButtons"></div>
-  </div>
+<body>
+  <div class="container">
+    <div class="top">
+      <div class="live">🔴 Live</div>
+      <div class="chat">💬 دردشة</div>
+      <div id="userButtons"></div>
+    </div>
 
-  <div>
     <button class="btn new" onclick="addMemory()" id="addMemoryBtn" style="display:none;">➕ ذكرى جديدة</button>
+
+    <div id="memoriesContainer"><!-- سيتم إدراج الذكريات هنا --></div>
   </div>
 
-  <div id="memoriesContainer"></div>
-
-  <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, increment, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, addDoc, updateDoc, increment, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-    // 🧩 Firebase config
+    // ⚙️ إعداد Firebase (كما أرسلت)
     const firebaseConfig = {
       apiKey: "AIzaSyCKKkHfKFfwlgnEju0sk0s46t3DnG0bhtE",
       authDomain: "social-memories-89ec5.firebaseapp.com",
       projectId: "social-memories-89ec5",
-      storageBucket: "social-memories-89ec5.firebasestorage.app",
-      messagingSenderId: "227392608508",
-      appId: "1:227392608508:web:450fc4d2dece0329f39f79",
-      measurementId: "G-6BRPV713MR"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-
-    const memoriesCol = collection(db, "memories");
-    const commentsCol = (mid) => collection(db, "memories", mid, "comments");
-
-    // 🛠 UI DOM elements
-    const memoriesContainer = document.getElementById("memoriesContainer");
-    const addMemoryBtn = document.getElementById("addMemoryBtn");
-    const userButtons = document.getElementById("userButtons");
-
-    let currentUser = null;
-
-    // 📌 Authentication
-    function showLoginUI() {
-      userButtons.innerHTML = `
-        <input type="email" id="email" placeholder="البريد" />
-        <input type="password" id="password" placeholder="كلمة المرور" />
-        <button id="loginBtn">تسجيل الدخول / إنشاء حساب</button>
-      `;
-      document.getElementById("loginBtn").onclick = () => {
-        const email = document.getElementById("email").value.trim();
-        const pass = document.getElementById("password").value.trim();
-        if (!email || !pass) return alert("الرجاء إدخال البريد وكلمة المرور");
-        signInWithEmailAndPassword(auth, email, pass)
-          .catch(() =>
-            createUserWithEmailAndPassword(auth, email, pass)
-              .catch(err => alert(err.message))
-          );
-      };
-    }
-
-    function showUserUI(user) {
-      userButtons.innerHTML = `
-        <span id="welcome">مرحبًا، ${user.displayName || user.email}</span>
-        <button id="logoutBtn">تسجيل الخروج</button>
-      `;
-      document.getElementById("logoutBtn").onclick = () => signOut(auth);
-    }
-
-    // 📌 Sign in with Google
-    function signInGoogle() {
-      const btn = document.createElement("button");
-      btn.textContent = "تسجيل Google";
-      btn.onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
-      userButtons.appendChild(btn);
-    }
-
-    onAuthStateChanged(auth, user => {
-      currentUser = user;
-      if (user) {
-        showUserUI(user);
-        addMemoryBtn.style.display = "block";
-      } else {
-        showLoginUI();
-        signInGoogle();
-        addMemoryBtn.style.display = "none";
-      }
-      loadMemories();
-    });
-
-    // 📌 Add memory
-    async function addMemory() {
-      const title = prompt("🎉 أدخل عنوان الذكرى:");
-      if (!title) return;
-      await addDoc(memoriesCol, {
-        title, likes: 0, commentsCount: 0,
-        owner: currentUser.uid,
-        createdAt: new Date()
-      });
-    }
-
-    // عرض الذكريات
-    function renderMem
+     

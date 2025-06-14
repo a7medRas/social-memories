@@ -1,176 +1,450 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>تسجيل دخول Firebase</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 400px;
-      margin: 30px auto;
-      padding: 10px;
-      direction: rtl;
-    }
-    input, button {
-      width: 100%;
-      margin: 0.5rem 0;
-      padding: 0.6rem;
-      font-size: 1rem;
-      box-sizing: border-box;
-    }
-    button {
-      cursor: pointer;
-      background: #2d89ef;
-      border: none;
-      color: white;
-      border-radius: 4px;
-    }
-    button:hover {
-      background: #1b5fad;
-    }
-    .hidden {
-      display: none;
-    }
-    .message {
-      margin-top: 0.8rem;
-      padding: 0.6rem;
-      border-radius: 5px;
-    }
-    .error {
-      background: #fdd;
-      color: #900;
-    }
-    .success {
-      background: #dfd;
-      color: #090;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>شبكة ذكريات اجتماعية متكاملة</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 10px;
+    direction: rtl;
+    background: #fafafa;
+  }
+  h2, h3 {
+    text-align: center;
+    color: #333;
+  }
+  input, textarea, select, button {
+    width: 100%;
+    padding: 8px;
+    margin: 6px 0;
+    font-size: 1rem;
+    box-sizing: border-box;
+  }
+  button {
+    background-color: #007bff;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  button:hover {
+    background-color: #0056b3;
+  }
+  .hidden {
+    display: none;
+  }
+  .message {
+    padding: 8px;
+    border-radius: 4px;
+    margin-top: 10px;
+    text-align: center;
+  }
+  .error {
+    background: #fdd;
+    color: #900;
+  }
+  .success {
+    background: #dfd;
+    color: #090;
+  }
+  .memory {
+    background: white;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 6px;
+    box-shadow: 0 1px 3px #ccc;
+  }
+  .memory .status {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  .memory .text {
+    margin-bottom: 10px;
+  }
+  .memory .actions button {
+    background: #eee;
+    color: #555;
+    border-radius: 3px;
+    margin-right: 6px;
+    width: auto;
+    padding: 5px 10px;
+  }
+  .memory .actions button.liked {
+    color: #e0245e;
+    font-weight: bold;
+  }
+  #chat-box {
+    border: 1px solid #ccc;
+    background: white;
+    height: 250px;
+    overflow-y: auto;
+    padding: 8px;
+    border-radius: 6px;
+  }
+  #chat-input {
+    display: flex;
+    margin-top: 6px;
+  }
+  #chat-input input {
+    flex: 1;
+    margin: 0;
+    padding: 8px;
+  }
+  #chat-input button {
+    width: 80px;
+    margin: 0 0 0 8px;
+  }
+</style>
 </head>
 <body>
 
-  <h2>تسجيل دخول Firebase</h2>
+<h2>شبكة ذكريات اجتماعية متكاملة</h2>
 
-  <div id="auth-section">
-    <input type="email" id="email" placeholder="البريد الإلكتروني" />
-    <input type="password" id="password" placeholder="كلمة المرور" />
-    <button id="login-btn">تسجيل الدخول</button>
-    <button id="signup-btn">إنشاء حساب جديد</button>
-    <div id="auth-message" class="message hidden"></div>
+<!-- قسم التسجيل والدخول -->
+<div id="auth-section">
+  <input type="email" id="email" placeholder="البريد الإلكتروني" />
+  <input type="password" id="password" placeholder="كلمة المرور" />
+  <button id="login-btn">تسجيل الدخول</button>
+  <button id="signup-btn">إنشاء حساب جديد</button>
+  <div id="auth-message" class="message hidden"></div>
+</div>
+
+<!-- قسم المستخدم بعد تسجيل الدخول -->
+<div id="user-section" class="hidden">
+  <h3>مرحباً <span id="user-email"></span></h3>
+  <button id="logout-btn">تسجيل الخروج</button>
+  
+  <!-- نشر ذكرى -->
+  <h3>نشر ذكرى جديدة</h3>
+  <textarea id="memory-text" placeholder="اكتب ذكريتك هنا..." rows="3"></textarea>
+  <select id="memory-status">
+    <option value="سعيد">سعيد 😊</option>
+    <option value="فرح">فرح 🎉</option>
+    <option value="محبة">محبة ❤️</option>
+    <option value="حزن">حزن 😢</option>
+    <option value="غضب">غضب 😠</option>
+  </select>
+  <button id="post-memory-btn">نشر الذكرى</button>
+  <div id="memory-message" class="message hidden"></div>
+
+  <!-- عرض الذكريات -->
+  <h3>الذكريات</h3>
+  <div id="memories-list"></div>
+
+  <!-- دردشة -->
+  <h3>الدردشة</h3>
+  <div id="chat-box"></div>
+  <div id="chat-input">
+    <input type="text" id="chat-message" placeholder="اكتب رسالة..." />
+    <button id="send-chat-btn">إرسال</button>
   </div>
+</div>
 
-  <div id="user-section" class="hidden">
-    <h3>مرحباً <span id="user-email"></span></h3>
-    <button id="logout-btn">تسجيل الخروج</button>
-  </div>
+<!-- Firebase SDKs -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-  <!-- Firebase SDK -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+  // إعداد Firebase (تأكد تغير الإعدادات لـ حسابك)
+  const firebaseConfig = {
+    apiKey: "AIzaSyCKKkHfKFfwlgnEju0sk0s46t3DnG0bhtE",
+    authDomain: "social-memories-89ec5.firebaseapp.com",
+    projectId: "social-memories-89ec5",
+    storageBucket: "social-memories-89ec5.appspot.com",
+    messagingSenderId: "227392608508",
+    appId: "1:227392608508:web:450fc4d2dece0329f39f79",
+    measurementId: "G-6BRPV713MR"
+  };
 
-  <script>
-    // إعدادات Firebase
-    const firebaseConfig = {
-      apiKey: "AIzaSyCKKkHfKFfwlgnEju0sk0s46t3DnG0bhtE",
-      authDomain: "social-memories-89ec5.firebaseapp.com",
-      projectId: "social-memories-89ec5",
-      storageBucket: "social-memories-89ec5.appspot.com",
-      messagingSenderId: "227392608508",
-      appId: "1:227392608508:web:450fc4d2dece0329f39f79",
-      measurementId: "G-6BRPV713MR"
+  firebase.initializeApp(firebaseConfig);
+
+  const auth = firebase.auth();
+  const db = firebase.firestore();
+  const realtimeDB = firebase.database();
+
+  // عناصر الواجهة
+  const authSection = document.getElementById("auth-section");
+  const emailInput = document.getElementById("email");
+  const passwordInput = document.getElementById("password");
+  const loginBtn = document.getElementById("login-btn");
+  const signupBtn = document.getElementById("signup-btn");
+  const authMessage = document.getElementById("auth-message");
+
+  const userSection = document.getElementById("user-section");
+  const userEmailSpan = document.getElementById("user-email");
+  const logoutBtn = document.getElementById("logout-btn");
+
+  const memoryText = document.getElementById("memory-text");
+  const memoryStatus = document.getElementById("memory-status");
+  const postMemoryBtn = document.getElementById("post-memory-btn");
+  const memoryMessage = document.getElementById("memory-message");
+  const memoriesList = document.getElementById("memories-list");
+
+  const chatBox = document.getElementById("chat-box");
+  const chatMessageInput = document.getElementById("chat-message");
+  const sendChatBtn = document.getElementById("send-chat-btn");
+
+  // تسجيل الدخول
+  loginBtn.addEventListener("click", () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    if (!email || !password) {
+      showAuthMessage("الرجاء إدخال البريد الإلكتروني وكلمة المرور", "error");
+      return;
+    }
+    auth.signInWithEmailAndPassword(email, password)
+      .then(() => showAuthMessage("تم تسجيل الدخول", "success"))
+      .catch(e => showAuthMessage("فشل تسجيل الدخول: " + e.message, "error"));
+  });
+
+  // إنشاء حساب جديد
+  signupBtn.addEventListener("click", () => {
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+    if (!email || !password) {
+      showAuthMessage("الرجاء إدخال البريد الإلكتروني وكلمة المرور", "error");
+      return;
+    }
+    auth.createUserWithEmailAndPassword(email, password)
+      .then(() => showAuthMessage("تم إنشاء الحساب وتسجيل الدخول", "success"))
+      .catch(e => showAuthMessage("فشل إنشاء الحساب: " + e.message, "error"));
+  });
+
+  // تسجيل الخروج
+  logoutBtn.addEventListener("click", () => {
+    auth.signOut();
+  });
+
+  // نشر ذكرى جديدة
+  postMemoryBtn.addEventListener("click", () => {
+    const text = memoryText.value.trim();
+    const status = memoryStatus.value;
+
+    if (!text) {
+      showMemoryMessage("الرجاء كتابة نص الذكرى", "error");
+      return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+      showMemoryMessage("يجب تسجيل الدخول لنشر ذكرى", "error");
+      return;
+    }
+
+    postMemoryBtn.disabled = true;
+
+    db.collection("memories").add({
+      uid: user.uid,
+      email: user.email,
+      text: text,
+      status: status,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      likes: [],
+      comments: []
+    }).then(() => {
+      memoryText.value = "";
+      showMemoryMessage("تم نشر الذكرى", "success");
+      postMemoryBtn.disabled = false;
+    }).catch(e => {
+      showMemoryMessage("خطأ أثناء نشر الذكرى: " + e.message, "error");
+      postMemoryBtn.disabled = false;
+    });
+  });
+
+  // تحميل وعرض الذكريات باستمرار
+  function loadMemories() {
+    db.collection("memories")
+      .orderBy("createdAt", "desc")
+      .onSnapshot(snapshot => {
+        memoriesList.innerHTML = "";
+        snapshot.forEach(doc => {
+          const memory = doc.data();
+          const id = doc.id;
+          renderMemory(id, memory);
+        });
+      });
+  }
+
+  // رسم ذكرى في القائمة
+  function renderMemory(id, memory) {
+    const user = auth.currentUser;
+    const liked = memory.likes.includes(user?.uid);
+
+    const div = document.createElement("div");
+    div.className = "memory";
+
+    div.innerHTML = `
+      <div class="status">${memory.status}</div>
+      <div class="text">${escapeHtml(memory.text)}</div>
+      <div><small>من: ${escapeHtml(memory.email)}</small></div>
+      <div><small>تاريخ: ${memory.createdAt ? memory.createdAt.toDate().toLocaleString() : "... جاري التحميل"}</small></div>
+      <div class="actions">
+        <button class="like-btn ${liked ? 'liked' : ''}">${liked ? "❤️ تم الإعجاب" : "♡ إعجاب"} (${memory.likes.length})</button>
+        <button class="comment-btn">تعليق (${memory.comments.length})</button>
+      </div>
+      <div class="comments-section hidden"></div>
+    `;
+
+    // زر الإعجاب
+    const likeBtn = div.querySelector(".like-btn");
+    likeBtn.onclick = () => {
+      if (!user) {
+        alert("يجب تسجيل الدخول للإعجاب");
+        return;
+      }
+      const likes = memory.likes;
+      const uidIndex = likes.indexOf(user.uid);
+      if (uidIndex >= 0) likes.splice(uidIndex, 1);
+      else likes.push(user.uid);
+
+      db.collection("memories").doc(id).update({ likes });
     };
 
-    // تهيئة Firebase
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-
-    // عناصر الواجهة
-    const authSection = document.getElementById("auth-section");
-    const emailInput = document.getElementById("email");
-    const passwordInput = document.getElementById("password");
-    const loginBtn = document.getElementById("login-btn");
-    const signupBtn = document.getElementById("signup-btn");
-    const authMessage = document.getElementById("auth-message");
-
-    const userSection = document.getElementById("user-section");
-    const userEmailSpan = document.getElementById("user-email");
-    const logoutBtn = document.getElementById("logout-btn");
-
-    // تسجيل الدخول
-    loginBtn.addEventListener("click", () => {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-
-      if (!email || !password) {
-        showMessage("الرجاء إدخال البريد الإلكتروني وكلمة المرور", "error");
+    // زر التعليق
+    const commentBtn = div.querySelector(".comment-btn");
+    const commentsSection = div.querySelector(".comments-section");
+    commentBtn.onclick = () => {
+      if (!user) {
+        alert("يجب تسجيل الدخول للتعليق");
         return;
       }
-      auth.signInWithEmailAndPassword(email, password)
-        .then(userCredential => {
-          // نجاح تسجيل الدخول
-          showMessage("تم تسجيل الدخول بنجاح", "success");
-          updateUI(userCredential.user);
-        })
-        .catch(error => {
-          showMessage("فشل تسجيل الدخول: " + error.message, "error");
-        });
-    });
-
-    // إنشاء حساب جديد
-    signupBtn.addEventListener("click", () => {
-      const email = emailInput.value.trim();
-      const password = passwordInput.value.trim();
-
-      if (!email || !password) {
-        showMessage("الرجاء إدخال البريد الإلكتروني وكلمة المرور", "error");
-        return;
-      }
-      auth.createUserWithEmailAndPassword(email, password)
-        .then(userCredential => {
-          showMessage("تم إنشاء الحساب وتسجيل الدخول", "success");
-          updateUI(userCredential.user);
-        })
-        .catch(error => {
-          showMessage("فشل إنشاء الحساب: " + error.message, "error");
-        });
-    });
-
-    // تسجيل الخروج
-    logoutBtn.addEventListener("click", () => {
-      auth.signOut()
-        .then(() => {
-          updateUI(null);
-          showMessage("تم تسجيل الخروج", "success");
-        });
-    });
-
-    // تحديث الواجهة بناء على حالة المستخدم
-    function updateUI(user) {
-      if (user) {
-        authSection.classList.add("hidden");
-        userSection.classList.remove("hidden");
-        userEmailSpan.textContent = user.email;
-        authMessage.classList.add("hidden");
+      if (commentsSection.classList.contains("hidden")) {
+        commentsSection.classList.remove("hidden");
+        renderComments(id, memory.comments, commentsSection);
       } else {
-        authSection.classList.remove("hidden");
-        userSection.classList.add("hidden");
-        emailInput.value = "";
-        passwordInput.value = "";
+        commentsSection.classList.add("hidden");
       }
-    }
+    };
 
-    // عرض رسالة
-    function showMessage(msg, type) {
-      authMessage.textContent = msg;
-      authMessage.className = "message " + (type === "error" ? "error" : "success");
-      authMessage.classList.remove("hidden");
-    }
+    memoriesList.appendChild(div);
+  }
 
-    // راقب حالة تسجيل الدخول
-    auth.onAuthStateChanged(user => {
-      updateUI(user);
+  // عرض التعليقات مع إضافة جديد
+  function renderComments(memoryId, comments, container) {
+    container.innerHTML = "";
+
+    const list = document.createElement("div");
+    comments.forEach(c => {
+      const cDiv = document.createElement("div");
+      cDiv.style.borderTop = "1px solid #ddd";
+      cDiv.style.padding = "4px 0";
+      cDiv.textContent = `${c.email}: ${c.text}`;
+      list.appendChild(cDiv);
     });
-  </script>
+    container.appendChild(list);
+
+    // إضافة تعليق جديد
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = "أضف تعليقًا...";
+    container.appendChild(input);
+
+    const sendBtn = document.createElement("button");
+    sendBtn.textContent = "إرسال";
+    container.appendChild(sendBtn);
+
+    sendBtn.onclick = () => {
+      const text = input.value.trim();
+      if (!text) return alert("اكتب تعليقًا");
+      const user = auth.currentUser;
+      if (!user) return alert("يجب تسجيل الدخول");
+
+      // أضف تعليق جديد للذاكرة
+      const newComment = {
+        email: user.email,
+        text,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+
+      // تحديث التعليقات في الفايرستور
+      db.collection("memories").doc(memoryId).update({
+        comments: firebase.firestore.FieldValue.arrayUnion(newComment)
+      }).then(() => {
+        input.value = "";
+      }).catch(e => alert("خطأ في إضافة التعليق: " + e.message));
+    };
+  }
+
+  // تحميل وعرض الدردشة realtime
+  function loadChat() {
+    realtimeDB.ref("chat/messages").on("value", snapshot => {
+      chatBox.innerHTML = "";
+      const messages = snapshot.val();
+      if (!messages) return;
+
+      Object.values(messages).forEach(m => {
+        const msgDiv = document.createElement("div");
+        msgDiv.textContent = `${m.email}: ${m.text}`;
+        msgDiv.style.borderBottom = "1px solid #eee";
+        msgDiv.style.padding = "4px 0";
+        chatBox.appendChild(msgDiv);
+      });
+      chatBox.scrollTop = chatBox.scrollHeight;
+    });
+  }
+
+  // إرسال رسالة دردشة
+  sendChatBtn.addEventListener("click", () => {
+    const text = chatMessageInput.value.trim();
+    const user = auth.currentUser;
+    if (!user) return alert("يجب تسجيل الدخول للدردشة");
+    if (!text) return;
+
+    const msg = {
+      uid: user.uid,
+      email: user.email,
+      text,
+      timestamp: Date.now()
+    };
+
+    realtimeDB.ref("chat/messages").push(msg);
+    chatMessageInput.value = "";
+  });
+
+  // تهيئة واجهة المستخدم حسب حالة تسجيل الدخول
+  auth.onAuthStateChanged(user => {
+    if (user) {
+      authSection.classList.add("hidden");
+      userSection.classList.remove("hidden");
+      userEmailSpan.textContent = user.email;
+
+      loadMemories();
+      loadChat();
+    } else {
+      authSection.classList.remove("hidden");
+      userSection.classList.add("hidden");
+      userEmailSpan.textContent = "";
+      memoriesList.innerHTML = "";
+      chatBox.innerHTML = "";
+    }
+  });
+
+  // رسائل واجهة المستخدم
+  function showAuthMessage(msg, type) {
+    authMessage.textContent = msg;
+    authMessage.className = "message " + (type === "error" ? "error" : "success");
+    authMessage.classList.remove("hidden");
+  }
+  function showMemoryMessage(msg, type) {
+    memoryMessage.textContent = msg;
+    memoryMessage.className = "message " + (type === "error" ? "error" : "success");
+    memoryMessage.classList.remove("hidden");
+    setTimeout(() => memoryMessage.classList.add("hidden"), 3000);
+  }
+
+  // دالة هروب HTML لمنع XSS
+  function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+  }
+</script>
 
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Social Memories</title>
+<title>Social Memories - Firebase</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -104,6 +104,18 @@
   ul#searchResults li:hover {
     background: #cce5ff;
   }
+  #loginSection {
+    padding: 16px;
+  }
+  #logoutBtn {
+    background: #dc3545;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    cursor: pointer;
+    border-radius: 4px;
+    float: left;
+  }
 </style>
 </head>
 <body>
@@ -113,13 +125,23 @@
   <button id="btnChat">💬 دردشة</button>
   <button id="btnSearch">🔍 بحث مستخدمين</button>
   <button id="btnNewMemory">📝 نشر ذكرى جديدة</button>
+  <button id="logoutBtn" style="display:none;">تسجيل خروج</button>
 </nav>
 
 <div id="content">
-  <div id="memoriesSection" class="active">
+  <div id="loginSection" class="active">
+    <h2>تسجيل الدخول</h2>
+    <input type="email" id="emailInput" placeholder="البريد الإلكتروني" required />
+    <input type="password" id="passwordInput" placeholder="كلمة المرور" required />
+    <button id="loginBtn" class="submit-btn">تسجيل الدخول</button>
+    <p>أو <button id="signupBtn" class="submit-btn">إنشاء حساب جديد</button></p>
+    <p id="loginMsg" style="color:red;"></p>
+  </div>
+
+  <div id="memoriesSection">
     <h2>📸 ذكريات</h2>
     <div id="memoriesList">
-      <!-- الذكريات تظهر هنا -->
+      جاري التحميل...
     </div>
   </div>
 
@@ -159,251 +181,152 @@
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-storage-compat.js"></script>
+
 <script>
-// بيانات وهمية للمستخدمين والذكريات
-const users = [
-  { uid: "u1", displayName: "علي" },
-  { uid: "u2", displayName: "سارة" },
-  { uid: "u3", displayName: "محمد" },
-];
+// ======= إعدادات Firebase الخاص بك =======
+const firebaseConfig = {
+  apiKey: "ضع هنا apiKey من Firebase",
+  authDomain: "ضع هنا authDomain من Firebase",
+  projectId: "ضع هنا projectId من Firebase",
+  storageBucket: "ضع هنا storageBucket من Firebase",
+  messagingSenderId: "ضع هنا messagingSenderId من Firebase",
+  appId: "ضع هنا appId من Firebase"
+};
 
-let memories = [
-  {
-    id: "m1",
-    title: "رحلة إلى الشاطئ",
-    text: "قضيت يوم جميل على البحر مع الأصدقاء.",
-    mood: "سعيدة",
-    likes: 3,
-    commentsCount: 2,
-    comments: [
-      { displayName: "سارة", text: "ما شاء الله! صور رائعة 😊", photoURL: null },
-      { displayName: "علي", text: "متى نكررها؟", photoURL: null }
-    ],
-  },
-  {
-    id: "m2",
-    title: "حفلة عيد ميلاد",
-    text: "احتفلنا بعيد ميلاد أختي مع العائلة.",
-    mood: "فرح",
-    likes: 5,
-    commentsCount: 1,
-    comments: [
-      { displayName: "محمد", text: "عيد ميلاد سعيد! 🎉", photoURL: null },
-    ],
-  },
-];
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
 
-// التحكم في عرض الأقسام
+// عناصر DOM
+const loginSection = document.getElementById("loginSection");
+const memoriesSection = document.getElementById("memoriesSection");
+const chatSection = document.getElementById("chatSection");
+const searchSection = document.getElementById("searchSection");
+const newMemorySection = document.getElementById("newMemorySection");
+
+const logoutBtn = document.getElementById("logoutBtn");
+
 const btnLive = document.getElementById("btnLive");
 const btnChat = document.getElementById("btnChat");
 const btnSearch = document.getElementById("btnSearch");
 const btnNewMemory = document.getElementById("btnNewMemory");
 
-const memoriesSection = document.getElementById("memoriesSection");
-const newMemorySection = document.getElementById("newMemorySection");
-const chatSection = document.getElementById("chatSection");
-const searchSection = document.getElementById("searchSection");
+const memoriesList = document.getElementById("memoriesList");
 
-function hideAllSections() {
-  memoriesSection.classList.remove("active");
-  newMemorySection.classList.remove("active");
-  chatSection.classList.remove("active");
-  searchSection.classList.remove("active");
-}
-
-btnLive.addEventListener("click", () => {
-  alert("⚠️ خاصية البث المباشر قيد الصيانة حالياً");
-});
-
-btnChat.addEventListener("click", () => {
-  hideAllSections();
-  chatSection.classList.add("active");
-});
-
-btnSearch.addEventListener("click", () => {
-  hideAllSections();
-  searchSection.classList.add("active");
-});
-
-btnNewMemory.addEventListener("click", () => {
-  hideAllSections();
-  newMemorySection.classList.add("active");
-});
-
-window.onload = () => {
-  hideAllSections();
-  memoriesSection.classList.add("active");
-  renderMemories();
-};
-
-// عرض الذكريات
-function renderMemories() {
-  const container = document.getElementById("memoriesList");
-  container.innerHTML = "";
-  if (memories.length === 0) {
-    container.innerHTML = "<p>لا توجد ذكريات حتى الآن.</p>";
-    return;
-  }
-  memories.forEach((memory) => {
-    const div = document.createElement("div");
-    div.className = "memory";
-    div.dataset.id = memory.id;
-    div.innerHTML = `
-      <h3>${memory.title} <small>(${memory.mood})</small></h3>
-      <p>${memory.text}</p>
-      <div class="memory-buttons">
-        <button class="like-btn">👍 ${memory.likes}</button>
-        <button class="comment-btn">💬 ${memory.commentsCount}</button>
-      </div>
-      <div class="comments-list">
-        ${memory.comments
-          .map(
-            (c) =>
-              `<div class="comment">${c.photoURL ? `<img src="${c.photoURL}" alt="avatar" />` : ""}<strong>${c.displayName}:</strong> ${c.text}</div>`
-          )
-          .join("")}
-      </div>
-    `;
-    container.appendChild(div);
-  });
-
-  // أزرار الإعجاب
-  document.querySelectorAll(".like-btn").forEach((btn) => {
-    btn.onclick = (e) => {
-      const memoryDiv = e.target.closest(".memory");
-      const id = memoryDiv.dataset.id;
-      likeMemory(id);
-    };
-  });
-  // أزرار التعليق تفتح prompt
-  document.querySelectorAll(".comment-btn").forEach((btn) => {
-    btn.onclick = (e) => {
-      const memoryDiv = e.target.closest(".memory");
-      const id = memoryDiv.dataset.id;
-      commentMemory(id);
-    };
-  });
-}
-
-function likeMemory(id) {
-  const memory = memories.find((m) => m.id === id);
-  if (!memory) return;
-  memory.likes++;
-  renderMemories();
-}
-
-function commentMemory(id) {
-  const memory = memories.find((m) => m.id === id);
-  if (!memory) return;
-  const commentText = prompt("أضف تعليقك:");
-  if (commentText && commentText.trim() !== "") {
-    memory.comments.push({ displayName: "أنت", text: commentText.trim(), photoURL: null });
-    memory.commentsCount++;
-    renderMemories();
-  }
-}
-
-// دردشة وهمية بسيطة
 const chatWindow = document.getElementById("chatWindow");
 const chatInput = document.getElementById("chatInput");
 const sendChatBtn = document.getElementById("sendChatBtn");
 
-function addChatMessage(text, isUser = true) {
-  const div = document.createElement("div");
-  div.className = "chat-message";
-  if (isUser) div.classList.add("user");
-  div.textContent = text;
-  chatWindow.appendChild(div);
-  chatWindow.scrollTop = chatWindow.scrollHeight;
-}
-
-sendChatBtn.onclick = () => {
-  const msg = chatInput.value.trim();
-  if (msg === "") return;
-  addChatMessage(msg, true);
-  chatInput.value = "";
-  setTimeout(() => {
-    addChatMessage("رد تلقائي: " + msg.split("").reverse().join(""), false);
-  }, 1000);
-};
-
-// بحث مستخدمين وهمي
 const searchInput = document.getElementById("searchInput");
 const searchResults = document.getElementById("searchResults");
 
-searchInput.addEventListener("input", () => {
-  const q = searchInput.value.trim().toLowerCase();
-  searchResults.innerHTML = "";
-  if (q === "") return;
-  const filtered = users.filter((u) => u.displayName.toLowerCase().includes(q));
-  if (filtered.length === 0) {
-    searchResults.innerHTML = "<li>لا يوجد مستخدمين.</li>";
-    return;
-  }
-  filtered.forEach((user) => {
-    const li = document.createElement("li");
-    li.textContent = user.displayName;
-    searchResults.appendChild(li);
-  });
-});
-
-// نشر ذكرى جديدة
 const memoryForm = document.getElementById("memoryForm");
 const memoryTitle = document.getElementById("memoryTitle");
 const memoryText = document.getElementById("memoryText");
 const moodSelect = document.getElementById("moodSelect");
 const memoryImage = document.getElementById("memoryImage");
 
-memoryForm.addEventListener("submit", (e) => {
-  e.preventDefault();
-  const title = memoryTitle.value.trim();
-  const text = memoryText.value.trim();
-  const mood = moodSelect.value;
+const emailInput = document.getElementById("emailInput");
+const passwordInput = document.getElementById("passwordInput");
+const loginBtn = document.getElementById("loginBtn");
+const signupBtn = document.getElementById("signupBtn");
+const loginMsg = document.getElementById("loginMsg");
 
-  if (!title || !text || !mood) {
-    alert("يرجى ملء جميع الحقول المطلوبة.");
+let currentUser = null;
+
+function hideAllSections() {
+  loginSection.style.display = "none";
+  memoriesSection.style.display = "none";
+  chatSection.style.display = "none";
+  searchSection.style.display = "none";
+  newMemorySection.style.display = "none";
+  logoutBtn.style.display = "none";
+}
+
+function showSection(section) {
+  hideAllSections();
+  section.style.display = "block";
+  if(section !== loginSection){
+    logoutBtn.style.display = "inline-block";
+  }
+}
+
+btnLive.addEventListener("click", () => {
+  alert("⚠️ خاصية البث المباشر قيد الصيانة حالياً");
+});
+btnChat.addEventListener("click", () => showSection(chatSection));
+btnSearch.addEventListener("click", () => showSection(searchSection));
+btnNewMemory.addEventListener("click", () => showSection(newMemorySection));
+logoutBtn.addEventListener("click", () => {
+  auth.signOut();
+});
+
+// ======= تسجيل دخول وإنشاء حساب =======
+loginBtn.onclick = () => {
+  loginMsg.textContent = "";
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+  if(!email || !password) {
+    loginMsg.textContent = "يرجى إدخال البريد وكلمة المرور.";
     return;
   }
+  auth.signInWithEmailAndPassword(email, password)
+    .then(() => {
+      loginMsg.textContent = "";
+    })
+    .catch(err => {
+      loginMsg.textContent = "خطأ في تسجيل الدخول: " + err.message;
+    });
+};
 
-  const newMemory = {
-    id: "m" + (memories.length + 1),
-    title,
-    text,
-    mood,
-    likes: 0,
-    commentsCount: 0,
-    comments: [],
-  };
+signupBtn.onclick = () => {
+  loginMsg.textContent = "";
+  const email = emailInput.value.trim();
+  const password = passwordInput.value.trim();
+  if(!email || !password) {
+    loginMsg.textContent = "يرجى إدخال البريد وكلمة المرور.";
+    return;
+  }
+  auth.createUserWithEmailAndPassword(email, password)
+    .then(() => {
+      loginMsg.textContent = "";
+    })
+    .catch(err => {
+      loginMsg.textContent = "خطأ في إنشاء الحساب: " + err.message;
+    });
+};
 
-  // دعم تحميل صورة بشكل بسيط كـ base64
-  if (memoryImage.files.length > 0) {
-    const file = memoryImage.files[0];
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      newMemory.imageData = event.target.result; // base64 image
-      memories.unshift(newMemory);
-      resetMemoryForm();
-      renderMemories();
-      hideAllSections();
-      memoriesSection.classList.add("active");
-    };
-    reader.readAsDataURL(file);
+// ======= متابعة حالة تسجيل الدخول =======
+auth.onAuthStateChanged(user => {
+  if(user){
+    currentUser = user;
+    showSection(memoriesSection);
+    loadMemories();
+    listenToChats();
+    loadUsers();
   } else {
-    memories.unshift(newMemory);
-    resetMemoryForm();
-    renderMemories();
-    hideAllSections();
-    memoriesSection.classList.add("active");
+    currentUser = null;
+    showSection(loginSection);
   }
 });
 
-function resetMemoryForm() {
-  memoryTitle.value = "";
-  memoryText.value = "";
-  moodSelect.value = "";
-  memoryImage.value = "";
-}
-</script>
-
-</body>
-</html>
+// ======= عرض الذكريات من Firestore =======
+function loadMemories(){
+  memoriesList.innerHTML = "جاري تحميل الذكريات...";
+  db.collection("memories")
+    .orderBy("createdAt", "desc")
+    .onSnapshot(snapshot => {
+      memoriesList.innerHTML = "";
+      if(snapshot.empty){
+        memoriesList.innerHTML = "<p>لا توجد ذكريات حتى الآن.</p>";
+        return;
+      }
+      snapshot.forEach(doc => {
+        const memory = doc.data();
+        const div = document.createElement("div");
+       

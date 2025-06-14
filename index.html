@@ -5,67 +5,68 @@
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <title>جدار الذكريات</title>
   <style>
-    body {
-      font-family: 'Tahoma', sans-serif;
-      margin: 0;
-      padding: 20px;
-      background: #fff;
-      color: #222;
-      transition: .3s;
-    }
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
+    body { font-family: Tahoma, sans-serif; margin:0; padding:20px; background:#fff; color:#222; transition:.3s; }
+    .container { max-width:600px; margin:0 auto; }
     @media (prefers-color-scheme: dark) {
-      body { background: #111; color: #eee; }
-      .card { background: #222; border-color: #333; }
-      .btn { opacity: .9; }
+      body { background:#111; color:#eee; }
+      .card { background:#222; border-color:#333; }
+      .btn { opacity:.9; }
     }
     .top { display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; }
     .live { background:red;color:#fff;padding:4px 8px;border-radius:6px; }
-    .chat { cursor: pointer; }
-    .btn {
-      padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:14px;
-    }
+    .chat { cursor:pointer; font-size:18px; }
+    .btn { padding:6px 12px; border:none; border-radius:6px; cursor:pointer; font-size:14px; }
     .btn.new { background:#0d6efd;color:#fff;width:100%;margin:15px 0; }
     .btn.like { background:#0d6efd;color:#fff; }
     .btn.comment { background:#198754;color:#fff; }
-    .card {
-      background:#f5f5f5; padding:15px; margin-bottom:15px; border-radius:8px; border:1px solid #ddd;
-    }
+    .card { background:#f5f5f5; padding:15px; margin-bottom:15px; border-radius:8px; border:1px solid #ddd; }
     .actions { display:flex; gap:10px; margin-top:10px; }
     .comment-list { margin-top:10px; }
-    .comment {
-      margin-top:8px; border-top:1px solid #ccc; padding-top:5px;
-      display:flex;align-items:center;gap:8px;
-    }
-    .comment img { width:28px;height:28px;border-radius:50%; }
-    #userButtons { margin-left: auto; }
-    #memoriesContainer { margin-top:20px; }
+    .comment { margin-top:8px; border-top:1px solid #ccc; padding-top:5px; display:flex; align-items:center; gap:8px; }
+    .comment img { width:28px; height:28px; border-radius:50%; }
+    input { padding:6px; margin-right:5px; border:1px solid #ccc; border-radius:4px; }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="top">
       <div class="live">🔴 Live</div>
-      <div class="chat">💬 دردشة</div>
+      <div class="chat">💬</div>
       <div id="userButtons"></div>
     </div>
 
-    <button class="btn new" onclick="addMemory()" id="addMemoryBtn" style="display:none;">➕ ذكرى جديدة</button>
+    <button class="btn new" id="addMemoryBtn" onclick="addMemory()" style="display:none;">➕ ذكرى جديدة</button>
 
-    <div id="memoriesContainer"><!-- سيتم إدراج الذكريات هنا --></div>
+    <div id="memoriesContainer"></div>
   </div>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, addDoc, updateDoc, increment, query, orderBy, onSnapshot } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+    import { getFirestore, collection, doc, addDoc, updateDoc, increment, query, orderBy, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
     import { getAuth, signInWithPopup, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
 
-    // ⚙️ إعداد Firebase (كما أرسلت)
+    // 🔧 Firebase configuration
     const firebaseConfig = {
-      apiKey: "AIzaSyCKKkHfKFfwlgnEju0sk0s46t3DnG0bhtE",
-      authDomain: "social-memories-89ec5.firebaseapp.com",
-      projectId: "social-memories-89ec5",
-     
+      apiKey: "...",
+      authDomain: "...",
+      projectId: "...",
+      storageBucket: "...",
+      messagingSenderId: "...",
+      appId: "...",
+      measurementId: "..."
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+    const memoriesCol = collection(db, "memories");
+    const commentsCol = mid => collection(db, "memories", mid, "comments");
+
+    const container = document.getElementById("memoriesContainer");
+    const addBtn = document.getElementById("addMemoryBtn");
+    const userButtons = document.getElementById("userButtons");
+    let currentUser = null;
+
+    function loginUI() {
+      userButtons.innerHTML = `
+        <input type="email" id="email" placeholder="البريد"/>
+        <input type="

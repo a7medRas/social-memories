@@ -1,3 +1,4 @@
+<!-- نسخة ثابتة ومستقرة من index.html -->
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -36,7 +37,7 @@
         <option value="حزين">😢 حزين</option>
       </select>
       <textarea id="memoryContent" placeholder="📝 وصف الذكرى..."></textarea>
-      <input type="file" id="imageUpload" accept="image/*,video/*" capture="environment" />
+      <input type="file" id="imageUpload" accept="image/*" capture="environment" />
       <button onclick="publishMemory()">🚀 نشر</button>
     </div>
     <div id="memoriesContainer"></div>
@@ -51,7 +52,6 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getFirestore, collection, addDoc, getDocs, updateDoc, doc, increment, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
     import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyCKKkHfKFfwlgnEju0sk0s46t3DnG0bhtE",
@@ -66,7 +66,6 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
     const auth = getAuth(app);
-    const storage = getStorage(app);
 
     window.login = async function () {
       const email = document.getElementById("email").value;
@@ -87,26 +86,19 @@
       const title = document.getElementById("memoryTitle").value;
       const feeling = document.getElementById("feeling").value;
       const content = document.getElementById("memoryContent").value;
-      const fileInput = document.getElementById("imageUpload");
+      const imageInput = document.getElementById("imageUpload");
+      let imageDataUrl = "";
 
-      let mediaUrl = "";
-      let mediaType = "";
-
-      if (fileInput.files.length > 0) {
-        const file = fileInput.files[0];
-        const ext = file.name.split('.').pop();
-        const fileRef = ref(storage, `users/${user.uid}/media_${Date.now()}.${ext}`);
-        await uploadBytes(fileRef, file);
-        mediaUrl = await getDownloadURL(fileRef);
-        mediaType = file.type.startsWith("video") ? "video" : "image";
+      if (imageInput.files.length > 0) {
+        const file = imageInput.files[0];
+        imageDataUrl = await toBase64(file);
       }
 
       await addDoc(collection(db, "users", user.uid, "memories"), {
         title,
         feeling,
         content,
-        mediaUrl,
-        mediaType,
+        image: imageDataUrl,
         likes: 0,
         comments: [],
         commentsCount: 0,
@@ -114,6 +106,15 @@
       });
 
       location.reload();
+    }
+
+    function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+      });
     }
 
     onAuthStateChanged(auth, async (user) => {
@@ -134,13 +135,7 @@
             <h3>${mem.title}</h3>
             <p>${mem.feeling ? '😊 يشعر بـ ' + mem.feeling : ''}</p>
             <p>${mem.content || ''}</p>
-            ${
-              mem.mediaUrl
-                ? (mem.mediaType === "video"
-                    ? `<video controls src="${mem.mediaUrl}" class="preview"></video>`
-                    : `<img src="${mem.mediaUrl}" class="preview" />`)
-                : ''
-            }
+            ${mem.image ? `<img src="${mem.image}" class="preview" />` : ''}
             <p>👍 <span id="like-${id}">${mem.likes}</span> إعجاب</p>
             <p>💬 <span id="comment-count-${id}">${mem.commentsCount}</span> تعليق</p>
             <button onclick="likeMemory('${user.uid}', '${id}')">👍 إعجاب</button>
